@@ -1,1 +1,0 @@
-# pp2_akhmetov_alan
