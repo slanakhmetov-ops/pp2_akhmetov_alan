@@ -1,0 +1,7 @@
+from datetime import datetime
+a = int(input())
+b = int(input())
+date1 = datetime.strptime(a, "%Y-%m-%d %H:%M")
+date2 = datetime.strptime(a, "%Y-%m-%d %H:%M")
+res = (date1 - date2).total_days
+print(res)

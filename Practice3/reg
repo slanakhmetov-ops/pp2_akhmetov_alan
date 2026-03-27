@@ -1,0 +1,7 @@
+import re
+s = input()
+if (re.match(r"^Hello", s)):
+    print("yes")
+else:
+    print("no")    
+
