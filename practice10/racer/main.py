@@ -3,12 +3,11 @@ import sys
 from pygame.locals import *
 import random
 
-# Initializing pygame
 pygame.init()
 
-# background music
+# music
 pygame.mixer.music.load("background.wav")
-pygame.mixer.music.play(-1)  # infinite loop
+pygame.mixer.music.play(-1)
 
 # crash sound
 crash_sound = pygame.mixer.Sound("crash.wav")
@@ -17,58 +16,73 @@ crash_sound = pygame.mixer.Sound("crash.wav")
 FPS = 60
 FramePerSec = pygame.time.Clock()
 
-# Colors
-BLUE = (0, 0, 255)
-RED = (255, 0, 0)
+# colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-YELLOW = (255, 215, 0)
 
-# Screen settings
+# screen
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 600
 
-# Game values
+# game values
 SPEED = 5
 SCORE = 0
 COINS = 0
 game_over_state = False
 
-# Fonts
+# fonts
 font = pygame.font.SysFont("Verdana", 60)
 font_small = pygame.font.SysFont("Verdana", 20)
 restart_font = pygame.font.SysFont("Verdana", 18)
 
 game_over_text = font.render("Game Over", True, BLACK)
 
-# Images
+# background
 background = pygame.image.load("AnimatedStreet.png")
 
-# Main screen
-DISPLAYSURF = pygame.display.set_mode((400, 600))
-DISPLAYSURF.fill(WHITE)
-pygame.display.set_caption("Game")
+# screen
+DISPLAYSURF = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Racer")
 
 
+# ================= PLAYER =================
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("space_racer.png")
+        self.image = pygame.transform.scale(self.image, (50, 90))
+        self.rect = self.image.get_rect(center=(160, 520))
+
+    def reset(self):
+        self.rect.center = (160, 520)
+
+    def move(self):
+        keys = pygame.key.get_pressed()
+
+        if keys[K_LEFT] and self.rect.left > 0:
+            self.rect.move_ip(-10, 0)
+
+        if keys[K_RIGHT] and self.rect.right < SCREEN_WIDTH:
+            self.rect.move_ip(10, 0)
+
+
+# ================= ENEMY =================
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-        self.enemy_images = [
+        self.images = [
             "Enemy.png",
             "conquest.jpg",
             "homelander.png",
             "invincible.jpg"
         ]
 
-        self.image = None
-        self.rect = None
         self.reset()
 
     def reset(self):
-        self.image = pygame.image.load(random.choice(self.enemy_images))
-        self.image = pygame.transform.scale(self.image, (50, 90))
-
+        img = pygame.image.load(random.choice(self.images))
+        self.image = pygame.transform.scale(img, (50, 90))
         self.rect = self.image.get_rect()
         self.rect.center = (
             random.randint(40, SCREEN_WIDTH - 40),
@@ -85,42 +99,32 @@ class Enemy(pygame.sprite.Sprite):
             self.reset()
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-
-        self.image = pygame.image.load("space_racer.png")
-        self.image = pygame.transform.scale(self.image, (50, 90))
-
-        self.rect = self.image.get_rect()
-        self.rect.center = (160, 520)
-
-    def reset(self):
-        self.rect.center = (160, 520)
-
-    def move(self):
-        pressed_keys = pygame.key.get_pressed()
-
-        if self.rect.left > 0:
-            if pressed_keys[K_LEFT]:
-                self.rect.move_ip(-5, 0)
-
-        if self.rect.right < SCREEN_WIDTH:
-            if pressed_keys[K_RIGHT]:
-                self.rect.move_ip(5, 0)
-
-
+# ================= COIN =================
 class Coin(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
         self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, YELLOW, (15, 15), 15)
-
         self.rect = self.image.get_rect()
-        self.reset_position()
+        self.generate()
 
-    def reset_position(self):
+    def generate(self):
+        # random value
+        self.value = random.choice([1, 2, 3])
+
+        # color by value
+        if self.value == 1:
+            color = (255, 215, 0)
+        elif self.value == 2:
+            color = (0, 255, 255)
+        else:
+            color = (255, 0, 255)
+
+        # redraw coin
+        self.image.fill((0, 0, 0, 0))
+        pygame.draw.circle(self.image, color, (15, 15), 15)
+
+        # position
         while True:
             self.rect.center = (
                 random.randint(50, SCREEN_WIDTH - 50),
@@ -134,9 +138,10 @@ class Coin(pygame.sprite.Sprite):
         self.rect.move_ip(0, SPEED)
 
         if self.rect.top > SCREEN_HEIGHT:
-            self.reset_position()
+            self.generate()
 
 
+# ================= RESET =================
 def reset_game():
     global SCORE, COINS, SPEED, game_over_state
 
@@ -147,31 +152,24 @@ def reset_game():
 
     P1.reset()
     E1.reset()
-    C1.reset_position()
+    C1.generate()
 
 
-# Creating sprites
+# ================= OBJECTS =================
 P1 = Player()
 E1 = Enemy()
 C1 = Coin()
 
-# Groups
-enemies = pygame.sprite.Group()
-enemies.add(E1)
+enemies = pygame.sprite.Group(E1)
+coins = pygame.sprite.Group(C1)
+all_sprites = pygame.sprite.Group(P1, E1, C1)
 
-coins = pygame.sprite.Group()
-coins.add(C1)
-
-all_sprites = pygame.sprite.Group()
-all_sprites.add(P1)
-all_sprites.add(E1)
-all_sprites.add(C1)
-
-# Speed increase event
+# speed timer
 INC_SPEED = pygame.USEREVENT + 1
 pygame.time.set_timer(INC_SPEED, 1000)
 
-# Game Loop
+
+# ================= GAME LOOP =================
 while True:
 
     for event in pygame.event.get():
@@ -180,34 +178,26 @@ while True:
             pygame.quit()
             sys.exit()
 
-        # restart game with R
+        # restart
         if event.type == KEYDOWN:
             if event.key == K_r and game_over_state:
                 reset_game()
 
+        # slow speed growth
         if event.type == INC_SPEED and not game_over_state:
-            SPEED += 0.5
+            SPEED += 0.2
 
     DISPLAYSURF.blit(background, (0, 0))
 
-    # score
-    score_text = font_small.render(
-        "Score: " + str(SCORE),
-        True,
-        BLACK
-    )
+    # UI
+    score_text = font_small.render("Score: " + str(SCORE), True, BLACK)
     DISPLAYSURF.blit(score_text, (10, 10))
 
-    # coins
-    coin_text = font_small.render(
-        "Coins: " + str(COINS),
-        True,
-        BLACK
-    )
-    DISPLAYSURF.blit(coin_text, (270, 10))
+    coin_text = font_small.render("Coins: " + str(COINS), True, BLACK)
+    DISPLAYSURF.blit(coin_text, (260, 10))
 
     if not game_over_state:
-        # normal game
+
         P1.move()
         E1.move()
         C1.move()
@@ -215,29 +205,28 @@ while True:
         for entity in all_sprites:
             DISPLAYSURF.blit(entity.image, entity.rect)
 
-        # enemy collision
+        # crash
         if pygame.sprite.spritecollideany(P1, enemies):
             crash_sound.play()
             game_over_state = True
 
-        # coin collision
+        # coin pickup
         if pygame.sprite.spritecollideany(P1, coins):
-            COINS += 1
-            C1.reset_position()
+            COINS += C1.value
+            C1.generate()
+
+            # increase difficulty every 5 coins
+            if COINS % 5 == 0:
+                SPEED += 1
 
     else:
-        # freeze scene
+        # game over screen
         for entity in all_sprites:
             DISPLAYSURF.blit(entity.image, entity.rect)
 
-        # game over text
         DISPLAYSURF.blit(game_over_text, (30, 230))
 
-        restart_text = restart_font.render(
-            "Press R to restart",
-            True,
-            WHITE
-        )
+        restart_text = restart_font.render("Press R to restart", True, WHITE)
         DISPLAYSURF.blit(restart_text, (110, 320))
 
     pygame.display.update()
