@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "first_name": "Alan",
+    "last_name": "Smith",
+    "email": "alan@gmail.com",
+    "birthday": "2005-05-10",
+    "group_name": null,
+    "phones": [
+      {
+        "phone": "777777777",
+        "type": "mobile"
+      }
+    ]
+  }
+]
